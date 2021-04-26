@@ -1258,17 +1258,19 @@ mergeInto(LibraryManager.library, {
   // built with SUPPORT_LONGJMP=1, the object file contains references of not
   // longjmp but _emscripten_throw_longjmp, which is called from
   // emscripten_longjmp.
-  _emscripten_throw_longjmp: function() { error('longjmp support was disabled (SUPPORT_LONGJMP=0), but it is required by the code (either set SUPPORT_LONGJMP=1, or remove uses of it in the project)'); },
   get _emscripten_throw_longjmp__deps() {
     return this.longjmp__deps;
   },
 #endif
+  _emscripten_throw_longjmp: function() {
+    error('longjmp support was disabled (SUPPORT_LONGJMP=0), but it is required by the code (either set SUPPORT_LONGJMP=1, or remove uses of it in the project)');
+  },
   // will never be emitted, as the dep errors at compile time
   longjmp: function(env, value) {
-    abort('longjmp not supported');
+    abort('longjmp not supported (build with -s SUPPORT_LONGJMP)');
   },
-  setjmp: function(env, value) {
-    abort('setjmp not supported');
+  setjmp: function(env) {
+    abort('setjmp not supported (build with -s SUPPORT_LONGJMP)');
   },
 #endif
 
