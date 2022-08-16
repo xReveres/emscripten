@@ -2412,13 +2412,13 @@ var LibraryHTML5 = {
   },
 
 #if USE_PTHREADS
-  emscripten_set_canvas_element_size_calling_thread__deps: [
+  $setCanvasElementSizeCallingThread__deps: [
     '$JSEvents',
 #if OFFSCREENCANVAS_SUPPORT
-    'emscripten_set_offscreencanvas_size_on_target_thread',
+    '$setOffscreenCanvasSizeOnTargetThread',
 #endif
     '$findCanvasEventTarget'],
-  emscripten_set_canvas_element_size_calling_thread: function(target, width, height) {
+  $setCanvasElementSizeCallingThread: function(target, width, height) {
     var canvas = findCanvasEventTarget(target);
     if (!canvas) return {{{ cDefine('EMSCRIPTEN_RESULT_UNKNOWN_TARGET') }}};
 
@@ -2461,7 +2461,7 @@ var LibraryHTML5 = {
 #if OFFSCREENCANVAS_SUPPORT
     } else if (canvas.canvasSharedPtr) {
       var targetThread = {{{ makeGetValue('canvas.canvasSharedPtr', 8, 'i32') }}};
-      _emscripten_set_offscreencanvas_size_on_target_thread(targetThread, target, width, height);
+      setOffscreenCanvasSizeOnTargetThread(targetThread, target, width, height);
       return {{{ cDefine('EMSCRIPTEN_RESULT_DEFERRED') }}}; // This will have to be done asynchronously
 #endif
     } else {
@@ -2480,8 +2480,9 @@ var LibraryHTML5 = {
 #if OFFSCREENCANVAS_SUPPORT
   _emscripten_set_offscreencanvas_size: 'emscripten_set_canvas_element_size',
 
-  emscripten_set_offscreencanvas_size_on_target_thread_js__deps: ['$stringToNewUTF8', 'emscripten_dispatch_to_thread_', '$withStackSave'],
-  emscripten_set_offscreencanvas_size_on_target_thread_js: function(targetThread, targetCanvas, width, height) {
+  $setOffscreenCanvasSizeOnTargetThread__deps: ['$stringToNewUTF8', 'emscripten_dispatch_to_thread_', '$withStackSave'],
+  $setOffscreenCanvasSizeOnTargetThread: function(targetThread, targetCanvas, width, height) {
+    targetCanvas = targetCanvas ? UTF8ToString(targetCanvas) : '';
     withStackSave(function() {
       var varargs = stackAlloc(12);
       var targetCanvasPtr = 0;
@@ -2498,12 +2499,6 @@ var LibraryHTML5 = {
       _emscripten_dispatch_to_thread_(targetThread, {{{ cDefine('EM_PROXIED_RESIZE_OFFSCREENCANVAS') }}}, 0, targetCanvasPtr /* satellite data */, varargs);
     });
   },
-
-  emscripten_set_offscreencanvas_size_on_target_thread__deps: ['emscripten_set_offscreencanvas_size_on_target_thread_js'],
-  emscripten_set_offscreencanvas_size_on_target_thread: function(targetThread, targetCanvas, width, height) {
-    targetCanvas = targetCanvas ? UTF8ToString(targetCanvas) : '';
-    _emscripten_set_offscreencanvas_size_on_target_thread_js(targetThread, targetCanvas, width, height);
-  },
 #else
   _emscripten_set_offscreencanvas_size: function(target, width, height) {
 #if ASSERTIONS
@@ -2513,12 +2508,14 @@ var LibraryHTML5 = {
   },
 #endif
 
-  emscripten_set_canvas_element_size_main_thread__proxy: 'sync',
-  emscripten_set_canvas_element_size_main_thread__sig: 'iiii',
-  emscripten_set_canvas_element_size_main_thread__deps: ['emscripten_set_canvas_element_size_calling_thread'],
-  emscripten_set_canvas_element_size_main_thread: function(target, width, height) { return _emscripten_set_canvas_element_size_calling_thread(target, width, height); },
+  $setCanvasElementSizeMainThread__proxy: 'sync',
+  $setCanvasElementSizeMainThread__sig: 'iiii',
+  $setCanvasElementSizeMainThread__deps: ['$setCanvasElementSizeCallingThread'],
+  $setCanvasElementSizeMainThread: function(target, width, height) {
+    return setCanvasElementSizeCallingThread(target, width, height);
+  },
 
-  emscripten_set_canvas_element_size__deps: ['$JSEvents', 'emscripten_set_canvas_element_size_calling_thread', 'emscripten_set_canvas_element_size_main_thread', '$findCanvasEventTarget'],
+  emscripten_set_canvas_element_size__deps: ['$JSEvents', '$setCanvasElementSizeCallingThread', '$setCanvasElementSizeMainThread', '$findCanvasEventTarget'],
   emscripten_set_canvas_element_size__sig: 'iiii',
   emscripten_set_canvas_element_size: function(target, width, height) {
 #if GL_DEBUG
@@ -2526,9 +2523,9 @@ var LibraryHTML5 = {
 #endif
     var canvas = findCanvasEventTarget(target);
     if (canvas) {
-      return _emscripten_set_canvas_element_size_calling_thread(target, width, height);
+      return setCanvasElementSizeCallingThread(target, width, height);
     }
-    return _emscripten_set_canvas_element_size_main_thread(target, width, height);
+    return setCanvasElementSizeMainThread(target, width, height);
   },
 #else
   emscripten_set_canvas_element_size__deps: ['$JSEvents', '$findCanvasEventTarget'],
