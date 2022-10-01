@@ -630,12 +630,19 @@ def get_binaryen_passes():
 def make_js_executable(script):
   src = read_file(script)
   cmd = config.JS_ENGINE
-  if settings.WASM_BIGINT:
+  if settings.MEMORY64 == 1:
+    if not config.V8_ENGINE:
+      exit_with_error('V8_ENGINE is required in order to run configure tests with MEMORY64 enabled')
+    cmd = config.V8_ENGINE
+    cmd.append('--experimental-wasm-memory64')
+  elif settings.WASM_BIGINT:
     cmd.append('--experimental-wasm-bigint')
-  cmd = shared.shlex_join(cmd)
-  if not os.path.isabs(config.JS_ENGINE[0]):
-    # TODO: use whereis etc. And how about non-*NIX?
-    cmd = '/usr/bin/env -S ' + cmd
+  if len(cmd) > 1 or os.path.isabs(cmd[0]):
+    # Using -S (--split-string) here means that arguments to the executable are correctly parsed.
+    # We don't do this by default because old versions of env don't support -S.
+    cmd = '/usr/bin/env -S ' + shared.shlex_join(cmd)
+  else:
+    cmd = shared.shlex_join(cmd)
   logger.debug('adding `#!` to JavaScript file: %s' % cmd)
   # add shebang
   with open(script, 'w') as f:
@@ -1596,7 +1603,10 @@ def phase_linker_setup(options, state, newargs, user_settings):
     # configure tests want a more shell-like style, where we emit return codes on exit()
     settings.EXIT_RUNTIME = 1
     # use node.js raw filesystem access, to behave just like a native executable
-    settings.NODERAWFS = 1
+    if settings.MEMORY64 == 1:
+      settings.ENVIRONMENT = 'shell'
+    else:
+      settings.NODERAWFS = 1
     # Add `#!` line to output JS and make it executable.
     options.executable = True
 
