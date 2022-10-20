@@ -9566,7 +9566,8 @@ NODEFS is no longer included by default; build with -lnodefs.js
 
 
 # Generate tests for everything
-def make_run(name, emcc_args, settings=None, env=None, node_args=None, require_v8=False, v8_args=None):
+def make_run(name, emcc_args, settings=None, env=None, node_args=None, require_v8=False,
+             require_wasm64=False, v8_args=None):
   if env is None:
     env = {}
   if settings is None:
@@ -9609,6 +9610,9 @@ def make_run(name, emcc_args, settings=None, env=None, node_args=None, require_v
     if require_v8:
       self.require_v8()
 
+    if require_wasm64:
+      self.require_wasm64(require_v8)
+
   TT.setUp = setUp
 
   return TT
@@ -9632,8 +9636,9 @@ corez = make_run('corez', emcc_args=['-Oz'])
 
 # MEMORY64=1
 wasm64 = make_run('wasm64', emcc_args=['-Wno-experimental', '--profiling-funcs'],
-                  settings={'MEMORY64': 1},
-                  require_v8=True, v8_args=['--experimental-wasm-memory64'])
+                  settings={'MEMORY64': 1}, require_wasm64=True)
+wasm64_v8 = make_run('wasm64_v8', emcc_args=['-Wno-experimental', '--profiling-funcs'],
+                     settings={'MEMORY64': 1}, require_wasm64=True, require_v8=True)
 # MEMORY64=2, or "lowered"
 wasm64l = make_run('wasm64l', emcc_args=['-Wno-experimental', '--profiling-funcs'],
                    settings={'MEMORY64': 2},

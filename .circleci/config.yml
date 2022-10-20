@@ -66,6 +66,19 @@ commands:
       - run:
           name: pip install
           command: << parameters.python >> -m pip install -r requirements-dev.txt
+  setup-latest-node:
+    description: "setup latest node"
+    steps:
+      - run:
+          name: setup latest node
+          command: |
+            cd $HOME
+            wget https://nodejs.org/dist/v19.0.0/node-v19.0.0-linux-x64.tar.xz
+            tar xf node-v19.0.0-linux-x64.tar.xz
+            echo "export EM_JS_ENGINES=$HOME/node-v19.0.0-linux-x64/bin/node" >> $BASH_ENV
+            echo "export EM_NODE_JS=$HOME/node-v19.0.0-linux-x64/bin/node" >> $BASH_ENV
+            echo "export PATH=\"$HOME/node-v19.0.0-linux-x64/bin:\$PATH\"" >> $BASH_ENV
+            echo "JS_ENGINES = [NODE_JS]" >> .emscripten
   build:
     description: "Install emsdk"
     steps:
@@ -161,7 +174,7 @@ commands:
       - emsdk-env
       - npm-install
       - pip-install
-      - run: apt-get install ninja-build
+      - run: sudo apt-get install ninja-build
   run-tests:
     description: "Runs emscripten tests"
     parameters:
@@ -465,14 +478,21 @@ jobs:
       - run-tests-linux:
           test_targets: "wasm2js1"
   test-wasm64:
-    executor: bionic
+    # We don't use `bionic` here since its tool old to run recent node versions:
+    # `/lib/x86_64-linux-gnu/libc.so.6: version `GLIBC_2.28' not found`
+    executor: linux-python
     steps:
       - run-tests-linux:
           frozen_cache: false
-          test_targets: "wasm64"
+          test_targets: "wasm64_v8"
       - run-tests:
           test_targets: "wasm64l"
+      - setup-latest-node
+      - run-tests:
+          test_targets: "wasm64"
   test-latest-node:
+    # We don't use `bionic` here since its tool old to run recent node versions:
+    # `/lib/x86_64-linux-gnu/libc.so.6: version `GLIBC_2.28' not found`
     executor: linux-python
     steps:
       - checkout
@@ -481,15 +501,7 @@ jobs:
           command: git submodule update --init
       - pip-install
       - build
-      - run:
-          name: get node
-          command: |
-            cd $HOME
-            wget https://nodejs.org/dist/v19.0.0/node-v19.0.0-linux-x64.tar.xz
-            tar xf node-v19.0.0-linux-x64.tar.xz
-            echo "export EM_JS_ENGINES=$HOME/node-v19.0.0-linux-x64/bin/node" >> $BASH_ENV
-            echo "export EM_NODE_JS=$HOME/node-v19.0.0-linux-x64/bin/node" >> $BASH_ENV
-            echo "export PATH=\"$HOME/node-v19.0.0-linux-x64/bin:\$PATH\"" >> $BASH_ENV
+      - setup-latest-node
       - run-tests:
           # Run tests that on older versions of node would require flags, but
           # those flags should not be injected on newer versions.
@@ -584,6 +596,7 @@ jobs:
     executor: mac
     environment:
       EMTEST_SKIP_V8: "1"
+      EMTEST_SKIP_WASM64: "1"
       EMCC_SKIP_SANITY_CHECK: "1"
     steps:
       - run:
