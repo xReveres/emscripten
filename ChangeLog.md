@@ -26,6 +26,8 @@ See docs/process.md for more on how version tagging works.
   applications that wish to know where emscripten is installed looking for
   `emcc` in the `PATH` has long been the recommended method (i.e. `which emcc`).
   (#18279)
+- Added `Module.pthreadPoolReady` promise for the `PTHREAD_POOL_DELAY_LOAD`
+  mode that allows to safely join spawned threads. (#18281)
 
 3.1.27 - 11/29/22
 -----------------
