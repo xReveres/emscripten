@@ -20,6 +20,10 @@ See docs/process.md for more on how version tagging works.
 
 3.1.28 (in development)
 -----------------------
+- Emscripten will now search your PATH for binaryen, llvm, and node if the
+  corresponding config file settings (`BINARYEN_ROOT`, `LLVM_ROOT`, `NODE_JS`)
+  are not set.  In theory this allows emscripten to run with an empty config
+  file.
 - musl libc updated from v1.2.2 to v1.2.3. (#18270)
 - The default emscripten config file no longer contains `EMSCRIPTEN_ROOT`.  This
   setting has long been completely ignored by emscripten itself. For

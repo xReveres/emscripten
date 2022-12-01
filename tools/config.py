@@ -96,6 +96,16 @@ def normalize_config_settings():
     CLANG_ADD_VERSION = os.getenv('CLANG_ADD_VERSION')
 
 
+def set_config_from_tool_location(config_key, tool_binary, f):
+  if globals()[config_key]:
+    return
+  path = utils.which(tool_binary)
+  if not path:
+    exit_with_error('%s not set in config (%s), and `%s` not found in PATH', config_key, EM_CONFIG, tool_binary)
+  print(config_key)
+  globals()[config_key] = f(path)
+
+
 def parse_config_file():
   """Parse the emscripten config file using python's exec.
 
@@ -155,12 +165,9 @@ def parse_config_file():
     if env_value and new_key not in os.environ:
       logger.debug(f'legacy environment variable found: `{key}`.  Please switch to using `{new_key}` instead`')
 
-  # Certain keys are mandatory
-  for key in ('LLVM_ROOT', 'NODE_JS', 'BINARYEN_ROOT'):
-    if key not in config:
-      exit_with_error('%s is not defined in %s', key, EM_CONFIG)
-    if not globals()[key]:
-      exit_with_error('%s is set to empty value in %s', key, EM_CONFIG)
+  set_config_from_tool_location('LLVM_ROOT', 'clang', os.path.dirname)
+  set_config_from_tool_location('BINARYEN_ROOT', 'wasm-opt', lambda x: os.path.dirname(os.path.dirname(x)))
+  set_config_from_tool_location('NODE_JS', 'node', lambda x: x)
 
   normalize_config_settings()
 
