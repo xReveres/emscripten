@@ -39,6 +39,11 @@ static void error(const char* fmt, ...) {
   va_start(ap, fmt);
   __dl_vseterr(fmt, ap);
   va_end(ap);
+#ifdef DYLINK_DEBUG
+  va_start(ap, fmt);
+  vfprintf(stderr, fmt, ap);
+  va_end(ap);
+#endif
 }
 
 int __dl_invalid_handle(void* h) {
