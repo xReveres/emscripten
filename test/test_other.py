@@ -890,6 +890,9 @@ f.close()
         out = self.run_process([emmake, 'pkg-config', '--modversion', package], stdout=PIPE).stdout
         self.assertContained(version, out)
 
+  def test_cmake_check_type_size(self):
+    self.run_process([EMCMAKE, 'cmake', test_file('cmake/check_type_size')])
+
   def test_system_include_paths(self):
     # Verify that all default include paths are within `emscripten/system`
 
